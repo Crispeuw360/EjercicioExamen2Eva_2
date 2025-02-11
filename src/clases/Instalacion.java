@@ -5,9 +5,9 @@ public class Instalacion extends Recurso {
 	private String descrip;
 	private boolean disponible;
 	
-	public Instalacion(String codR, Deporte deporte, int aforoMax, String descrip, boolean disponible) 
+	public Instalacion( Deporte deporte, int aforoMax, String descrip, boolean disponible) 
 	{
-		super(codR, deporte, aforoMax);
+		super(deporte, aforoMax);
 		this.descrip = descrip;
 		this.disponible = disponible;
 	}

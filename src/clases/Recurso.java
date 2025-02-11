@@ -7,20 +7,17 @@ public class Recurso implements Serializable {
 	protected String codR;
 	protected Deporte deporte;
 	protected int aforoMax;
+	private static int contador =1;
 	
-	public Recurso(String codR, Deporte deporte, int aforoMax) 
+	public Recurso( Deporte deporte, int aforoMax) 
 	{
-		this.codR = codR;
+		this.codR = generarCodigo(deporte);
 		this.deporte = deporte;
 		this.aforoMax = aforoMax;
 	}
 
 	public String getCodR() {
 		return codR;
-	}
-
-	public void setCodR(String codR) {
-		this.codR = codR;
 	}
 
 	public Deporte getDeporte() {
@@ -43,4 +40,12 @@ public class Recurso implements Serializable {
 	public String toString() {
 		return "Recurso [codR=" + codR + ", deporte=" + deporte + ", aforoMax=" + aforoMax + "]";
 	}
+	
+	private String generarCodigo(Deporte deporte) {
+        
+		String primerasLetras = deporte.name().substring(0, 2).toUpperCase();
+        
+        
+        return primerasLetras + String.format("%03d", contador++);
+    }
 }

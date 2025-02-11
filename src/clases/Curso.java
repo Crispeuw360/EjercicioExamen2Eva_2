@@ -1,7 +1,7 @@
 package clases;
 
 import java.time.LocalDate;
-import java.util.ListIterator;
+import java.util.ArrayList;
 
 public class Curso extends Recurso{
 
@@ -9,11 +9,11 @@ public class Curso extends Recurso{
 	private LocalDate fechInicioCur;
 	private LocalDate fechFinCur;
 	private double precioMensual;
-	private ListIterator PersoInscritas;
+	private ArrayList<Persona> PersoInscritas;
 	
-	public Curso(String codR, Deporte deporte, int aforoMax, int nivel, LocalDate fechInicioCur, LocalDate fechFinCur, double precioMensual, ListIterator persoInscritas) 
+	public Curso( Deporte deporte, int aforoMax, int nivel, LocalDate fechInicioCur, LocalDate fechFinCur, double precioMensual, ArrayList<Persona> persoInscritas) 
 	{
-		super(codR, deporte, aforoMax);
+		super(deporte, aforoMax);
 		this.nivel = nivel;
 		this.fechInicioCur = fechInicioCur;
 		this.fechFinCur = fechFinCur;
@@ -53,11 +53,11 @@ public class Curso extends Recurso{
 		this.precioMensual = precioMensual;
 	}
 
-	public ListIterator getPersoInscritas() {
+	public ArrayList<Persona> getPersoInscritas() {
 		return PersoInscritas;
 	}
 
-	public void setPersoInscritas(ListIterator persoInscritas) {
+	public void setPersoInscritas(ArrayList<Persona> persoInscritas) {
 		PersoInscritas = persoInscritas;
 	}
 
