@@ -1,9 +1,12 @@
 package main;
 
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -137,6 +140,94 @@ public class Main {
 		System.out.println("\nCurso creado con exito");
 
 		System.out.println("\nVolviendo al menu...\n");
+	}
+	public static boolean comprobarCurso(File fichRecurso, String codC) {
+		boolean finArchivo = false, esta=false;
+		ObjectInputStream ois=null;
+
+		try {	
+			ois=new ObjectInputStream(new FileInputStream(fichRecurso));
+
+			while (!finArchivo) {
+				try{
+					Curso aux=(Curso) ois.readObject();
+					
+					if(aux.getCodR()==codC) {
+						esta= true;
+					}			 
+				} catch (EOFException e) {
+					// Fin del archivo alcanzado
+					finArchivo = true;
+				}
+			}
+			ois.close();	 
+
+		}catch(Exception e) {
+			System.out.println("Fatal error");
+		}
+
+		return esta;
+	}
+	
+	public static void introducirPersonaEnCurso(File fichRecurso) {
+		File aux = new File("fichAux.dat");
+		ObjectInputStream ois;
+		ObjectOutputStream oos;
+		boolean finArchivo = false, modificado = false, excepcion = false, esta = false, existe = false;
+		String codC,dni,nombre;
+		ArrayList<Persona> auxArray = new ArrayList<>();
+
+		System.out.println("Introduce el codigo de la liga del equipo:");
+		codC = Utilidades.introducirCadena();
+		esta = comprobarCurso(fichRecurso, codC);
+		if (esta) {
+			try {
+				ois = new ObjectInputStream(new FileInputStream(fichRecurso));
+				oos = new ObjectOutputStream(new FileOutputStream(aux));
+
+				while (!finArchivo) {
+					try {
+						Curso aux1 = (Curso) ois.readObject();
+
+						if (aux1.getCodR().equalsIgnoreCase(codC)) {
+							System.out.println(aux.toString());
+							System.out.println("Introduce el dni de la persona");
+							dni = Utilidades.introducirCadena();
+							System.out.println("Introduce el nombre de la persona");
+							nombre = Utilidades.introducirCadena();
+							Persona p = new Persona(dni,nombre);
+							//aux1.getPersoInscritas(auxArray);
+							existe = true;
+						}
+
+						oos.writeObject(aux1);
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					} catch (EOFException e) {
+						finArchivo = true;
+					}
+				}
+
+				ois.close();
+				oos.close();
+
+				if (existe) {
+					if (fichRecurso.delete()) {
+						aux.renameTo(fichRecurso);
+					}
+				} else {
+					aux.delete();
+					System.out.println("\nNo se ha encontrado ningun equipo con ese nombre.");
+				}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+
+		}
+
 	}
 	
 
