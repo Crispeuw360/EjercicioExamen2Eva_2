@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 
 import clases.*;
+import excepcion.*;
 import utilidades.MyObjectOutputStream;
 import utilidades.Utilidades;
 
@@ -34,7 +35,7 @@ public class Main {
 		Persona p1 = new Persona("QWEQDQQD2", "Igor");
 		personas1.add(p1);
 		
-		Recurso r1 = new Curso(Deporte.ATLETISMO,250,1,LocalDate.of(2005, 1, 12),LocalDate.of(2022, 1, 12),200,personas1);
+		Recurso r1 = new Curso(Deporte.ATLETISMO,250,1,LocalDate.of(2026, 1, 12),LocalDate.of(2027, 1, 12),200,personas1);
 		
 		Recurso r3 = new Instalacion(Deporte.YOGA,25,"Yoga para Alumnos",true);
 
@@ -56,7 +57,7 @@ public class Main {
 		int aforoMax,nivel,precioMensual;
 		LocalDate fechaInicio,fechaFin;
 		MyObjectOutputStream moos;
-		boolean error = false, disponible;
+		boolean error = false, disponible,correcto=false;
 		Deporte deporte = null;
 		
 		do {
@@ -66,15 +67,15 @@ public class Main {
 				setEntrenador = Utilidades.introducirCadena().toUpperCase();
 				switch (setEntrenador) {
 				case "NATACION":
-					deporte = deporte.NATACION;
+					deporte = Deporte.NATACION;
 					break;
 
 				case "YOGA":
-					deporte = deporte.YOGA;
+					deporte = Deporte.YOGA;
 					break;
 
 				case "ATLETISMO":
-					deporte = deporte.ATLETISMO;
+					deporte = Deporte.ATLETISMO;
 					break;
 
 				default:
@@ -113,16 +114,22 @@ public class Main {
 				System.out.println("Inicio de curso: ");
 				fechaInicio = Utilidades.leerFechaDMA();
 
-				System.out.println("Fin de curso:");
-				fechaFin = Utilidades.leerFechaDMA();
-
+				do {
+					System.out.println("Fin de curso:");
+					fechaFin = Utilidades.leerFechaDMA();
+					if(fechaFin.isBefore(fechaFin))
+					{
+						correcto=false;
+						System.out.println("La fecha debe ser mayor al de inicio");
+					}else
+					{
+						correcto=true;
+					}
+				} while (!correcto);
 				System.out.println("Precio Mensual: ");
 				precioMensual = Utilidades.leerInt();
 
 				ArrayList<Persona> personas = new ArrayList<>();
-
-				System.out.println("\n¿Introducir otro jugador?");
-				respuesta = Utilidades.introducirCadena("si", "no");
 
 				Curso aux = new Curso(deporte, aforoMax, nivel, fechaInicio, fechaFin, precioMensual, personas);
 				moos.writeObject(aux);
@@ -150,11 +157,13 @@ public class Main {
 
 			while (!finArchivo) {
 				try{
-					Curso aux=(Curso) ois.readObject();
-					
-					if(aux.getCodR()==codC) {
-						esta= true;
-					}			 
+					Object obj = ois.readObject();
+	                if (obj instanceof Curso) {
+	                    Curso aux = (Curso) obj;
+	                    if (aux.getCodR().equalsIgnoreCase(codC)) {
+	                        esta = true;
+	                    }
+	                }
 				} catch (EOFException e) {
 					// Fin del archivo alcanzado
 					finArchivo = true;
@@ -164,70 +173,159 @@ public class Main {
 
 		}catch(Exception e) {
 			System.out.println("Fatal error");
+			e.printStackTrace();
 		}
+		try {
+	        if (ois != null) ois.close();
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+
 
 		return esta;
 	}
 	
 	public static void introducirPersonaEnCurso(File fichRecurso) {
-		File aux = new File("fichAux.dat");
+	    File aux = new File("fichAux.dat");
+	    ObjectInputStream ois = null;
+	    ObjectOutputStream oos = null;
+	    boolean finArchivo = false, esta = false, existe = false;
+	    String codC, dni, nombre;
+
+	    System.out.println("Introduce el codigo Del curso:");
+	    codC = Utilidades.introducirCadena();
+	    esta = comprobarCurso(fichRecurso, codC);
+
+	    if (esta) {
+	        try {
+	            ois = new ObjectInputStream(new FileInputStream(fichRecurso));
+	            oos = new ObjectOutputStream(new FileOutputStream(aux));
+
+	            while (!finArchivo) {
+	                try {
+	                    Object obj = ois.readObject();
+	                    if (obj instanceof Curso) {
+	                        Curso aux1 = (Curso) obj;
+
+	                        if (aux1.getCodR().equalsIgnoreCase(codC)) {
+	                            System.out.println(aux1.toString());
+	                            if (aux1.getFechInicioCur().isAfter(LocalDate.now())) {
+	                                System.out.println("Introduce el dni de la persona");
+	                                dni = Utilidades.introducirCadena();
+	                                System.out.println("Introduce el nombre de la persona");
+	                                nombre = Utilidades.introducirCadena();
+	                                Persona p = new Persona(dni, nombre);
+	                                aux1.getPersoInscritas().add(p);
+	                                System.out.println("aaaaaaaaaaaaa");
+	                                existe = true;
+	                            } else {
+	                                System.out.println("El periodo De Introduccion ha acabado");
+	                            }
+	                        }
+	                        oos.writeObject(aux1);  // Escribimos el objeto de nuevo
+	                    }
+	                } catch (ClassNotFoundException e) {
+	                    e.printStackTrace();
+	                } catch (EOFException e) {
+	                    finArchivo = true;  // Fin del archivo alcanzado
+	                }
+	            }
+
+	            // Verificación y renombrado del archivo
+	            if (existe) {
+	                if (fichRecurso.delete()) {
+	                    aux.renameTo(fichRecurso);
+	                    System.out.println("\nSe ha Escrito correctamente.");
+	                }
+	            } else {
+	                aux.delete();
+	                System.out.println("\nNo se ha encontrado ningun Recurso con ese Codigo.");
+	            }
+
+	        } catch (FileNotFoundException e) {
+	            e.printStackTrace();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        } finally {
+	            try {
+	                if (ois != null) ois.close();
+	                if (oos != null) oos.close();
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+	        }
+
+	    } else {
+	        System.out.println("No existe este codigo");
+	    }
+	}
+	public static void mostrarCursosDisponibles(File fichRecurso)
+	{
 		ObjectInputStream ois;
-		ObjectOutputStream oos;
-		boolean finArchivo = false, modificado = false, excepcion = false, esta = false, existe = false;
-		String codC,dni,nombre;
-		ArrayList<Persona> auxArray = new ArrayList<>();
+	    boolean hayCursosDisponibles = false,finArchivo = false;
+	    int plazasTotales = 0,plazasDisponibles=0;
+	    Deporte deporteSeleccionado;
+	    String deporteStr;
+	    ArrayList<Curso> listaCursos = new ArrayList<>();
+	    
 
-		System.out.println("Introduce el codigo de la liga del equipo:");
-		codC = Utilidades.introducirCadena();
-		esta = comprobarCurso(fichRecurso, codC);
-		if (esta) {
-			try {
-				ois = new ObjectInputStream(new FileInputStream(fichRecurso));
-				oos = new ObjectOutputStream(new FileOutputStream(aux));
+	    
+	    try {
+	    	System.out.println("Introduce el deporte:");
+	        deporteStr = Utilidades.introducirCadena().toUpperCase();
 
-				while (!finArchivo) {
-					try {
-						Curso aux1 = (Curso) ois.readObject();
-
-						if (aux1.getCodR().equalsIgnoreCase(codC)) {
-							System.out.println(aux.toString());
-							System.out.println("Introduce el dni de la persona");
-							dni = Utilidades.introducirCadena();
-							System.out.println("Introduce el nombre de la persona");
-							nombre = Utilidades.introducirCadena();
-							Persona p = new Persona(dni,nombre);
-							//aux1.getPersoInscritas(auxArray);
-							existe = true;
-						}
-
-						oos.writeObject(aux1);
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-					} catch (EOFException e) {
-						finArchivo = true;
+	        
+	        try {
+	            deporteSeleccionado = Deporte.valueOf(deporteStr);
+	        } catch (IllegalArgumentException e) {
+	            throw new DeporteNoValidoException("Error: '" + deporteStr + "' no es un deporte válido.");
+	        }
+	        ois = new ObjectInputStream(new FileInputStream(fichRecurso));
+	        
+			while (!finArchivo) {
+				try {
+					Object obj = ois.readObject();
+					if (obj instanceof Curso) {
+					    Curso curso = (Curso) obj; // Ahora sí, casteo seguro
+					    listaCursos.add(curso);
 					}
+				} catch (EOFException e) {
+					finArchivo = true; 
 				}
-
-				ois.close();
-				oos.close();
-
-				if (existe) {
-					if (fichRecurso.delete()) {
-						aux.renameTo(fichRecurso);
-					}
-				} else {
-					aux.delete();
-					System.out.println("\nNo se ha encontrado ningun equipo con ese nombre.");
-				}
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
-		} else {
 
-		}
+			ois.close();
 
+			ListIterator<Curso> iterador = listaCursos.listIterator();
+	        System.out.println("\nPara " + deporteSeleccionado + " tienes plazas disponibles en los siguientes cursos:");
+	        System.out.printf("%-10s %-10s %-10s %-20s\n", "CÓDIGO", "NIVEL", "AFORO", "PLAZAS DISPONIBLES");
+	        
+	        while (iterador.hasNext()) {
+	            Curso curso = iterador.next();
+	            
+	            if (curso.getDeporte() == deporteSeleccionado) {
+	                plazasDisponibles = curso.getAforoMax() - curso.getPersoInscritas().size();
+
+	                if (plazasDisponibles > 0) {
+	                    System.out.printf("%-10s %-10d %-10d %-20d\n",curso.getCodR(), curso.getNivel(), curso.getAforoMax(), plazasDisponibles);
+	                    plazasTotales = plazasTotales+plazasDisponibles;
+	                    hayCursosDisponibles = true;
+	                }
+	            }
+	        }
+	        if (hayCursosDisponibles) {
+	            System.out.println("\nTotal número de plazas disponibles: " + plazasTotales);
+	        } else {
+	            System.out.println("No se han encontrado cursos con plazas disponibles para este deporte.");
+	        }
+
+		} catch (FileNotFoundException e) {
+			System.out.println("Error: No se encontró el fichero.");
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (DeporteNoValidoException e) {
+	        System.out.println(e.getMessage());
+	    }
 	}
 	
 
@@ -250,11 +348,11 @@ public class Main {
 				break;
 
 			case 2:
-				
+				introducirPersonaEnCurso(fichRecurso);
 				break;
 
 			case 3:
-				
+				mostrarCursosDisponibles(fichRecurso);
 				break;
 
 			case 4:
